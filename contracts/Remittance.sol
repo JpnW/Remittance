@@ -119,7 +119,6 @@ contract Remittance {
         returns(bool success)
     {
         require(msg.sender == owner);
-        owner.transfer(totalCommission);
         totalCommissionLog(owner, totalCommission);
         selfdestruct(owner);
         return true;
