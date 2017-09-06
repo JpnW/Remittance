@@ -4,7 +4,7 @@ contract Remittance {
     address public owner;
     uint public fee;
     uint public duration;
-    // uint public totalCommission;
+    uint public totalCommission;
     struct TransactionStruct {
         uint amount;
         uint deadline;
@@ -13,10 +13,12 @@ contract Remittance {
         bytes32 passwordsHx;
     }
     mapping(bytes32 => TransactionStruct) public transactions;
+    event log(uint amount);
     
     function Remittance(uint _fee, uint _duration){
         owner = msg.sender;
         fee = _fee;
+        require(_duration > 0);
         duration = _duration;
     }
     
@@ -25,17 +27,25 @@ contract Remittance {
         payable
         returns (bool success)
     {
+        require(msg.value > fee);
+        
         bytes32 hx = keccak256(pw1);
         bytes32 _passwordsHx = keccak256(pw1, pw2);
         
+        require(transactions[hx].contributor > 0);
+      
         TransactionStruct memory newTransaction;
-        newTransaction.amount = msg.value;
+        
+        newTransaction.amount = msg.value - fee;
         newTransaction.deadline = block.number + duration;
         newTransaction.contributor = msg.sender;
         newTransaction.receiver = receiver;
         newTransaction.passwordsHx = _passwordsHx;
-
+        
         transactions[hx] = newTransaction;
+        
+        totalCommission += fee;
+        
         return true;
     }
     
@@ -90,6 +100,8 @@ contract Remittance {
         returns(bool success)
     {
         require(msg.sender == owner);
+        owner.transfer(totalCommission);
+        log(totalCommission);
         selfdestruct(owner);
         return true;
     }
